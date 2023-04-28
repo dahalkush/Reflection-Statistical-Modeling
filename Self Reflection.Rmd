@@ -1,0 +1,95 @@
+---
+title: "Self Reflection"
+author: "Kushal"
+date: "4/27/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Describe probability as a foundation of statistical modeling, including inference and maximum likelihood estimation
+
+Probability is always considered as a foundation of statistical modeling. When we have a data which is randomly distributed and has uncertainty, we consider probability like happening something if some conditions are met or the chances of it. On most of the statistical scenario, our goal is to understand the probability of something, either it may be the probability of something appearing, error occuring, false interpretation happening and so on. So on every aspect and on most statistical alsgorithms and technique, probability is the foundation. 
+
+In our course, considering the linear regression, I see it as a probability of happening something depending on the other certain variables. For an example, finding out the probability of being broke based on the income and living standards parameters. 
+
+Inference is  to predict something based on the other parameters. For an example, predicting loan amount of a student which is dependent on the rent, car price, distance from university, credits take and so on. We can implement multiple linear regression to predict the loan amount based on those factors. Both estimation and hypothesis comes under the inference. In inference, we may consider the sample data which represents the population data and use statistical techniques to predict and find out the conclusions assuming them as genralized population analysis.
+
+For the maximum likelihood estimation, we focus on the statistical model parameters and try to find them correctly so that it can help to make the correct estimates or prediction. During our class activities, we built linear regression model using lm() to estimate the slope and intercept of the regression line. For and example with a simple regression model of y=mx+c, the parameters of the model intercept(c) and slope (m) makes the estimation of the variable y on a particular value of x. glance() function in r was used to find out the standard errors and confidence interval while estimating intercept and slope of the model.
+
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+hfi <- read.csv("https://www.openintro.org/data/csv/hfi.csv")
+hfi_2016<- filter(hfi, year == 2016)
+simple_model <- lm(pf_score ~ pf_expression_control, data = hfi_2016)
+par(mfrow = c(2, 2))
+plot(simple_model)
+```
+```{r}
+glance(simple_model)
+tidy(simple_model)
+```
+
+During the activity 2 in the class, we worked on the simple linear regression model on the hfi dataset. In the above model, our objective was to predict the pf_score depending on pf_expression_control variable. We built a simple linear regression model using lm(). For the inference, we tried to predict the pf_score. Regarding the maximum likelihood estimation, we were able to get slope and the intercept for the above model. The slope value(m)- pf_expression_control is 0.541 and intercept c is 4.283. For the model accuracy and error calculation, tidy function was used to give the standard error whereas glance is used to calcuate the r- square and p value. 
+
+
+
+#Determine and apply the appropriate generalized linear model for a specific data context
+
+Based on specific data context, it is always important to determine which is the generalized linear model and what combination of independent attributes can play an important role to predict the dependent one with highe accuracy and low error. For these kind of evaluation, we have several statistical metrics and methodologies to evaluate the accuracy of the models.  Fitting the linear regression model with correct attributes so the model can be accurately used to predict the dependent variable is important.
+
+Below we have evaluated our model to predict the pf_score based on pf_expression_influence  and pf_expression_control. The p-values for the slopes and intercept are below 0.05 and the standard error is also within the 0.05. 
+
+```{r}
+hfi %>% 
+  select(pf_score, pf_expression_influence, pf_expression_control) %>% 
+  ggpairs()
+
+#fit the mlr model
+m_pf <- lm(pf_score ~ pf_expression_influence + pf_expression_control, data = hfi)
+tidy(m_pf)
+glance(m_pf)
+```
+From the summary below, we can see that the F-statistic is 1308 and the p-value <0.00001 which is less than the 0.05(significance level). This means that the model has good accuracy as there is statistically significant relationship between the predictor variable and the response variable.
+```{r}
+summary(m_pf)
+```
+Also the plot between residuals vs. fitted (predicted) values are created which seems like randomly distributed that has the significance notifying no significant predictors are missing and there is not any systematic errors present on the model. Also from the graph below it looks like they have the predictors and response variable have linear relationship.
+
+```{r}
+# obtain fitted values and residuals
+m_pf_aug <- augment(m_pf)
+
+# plot fitted values and residuals
+ggplot(data = m_pf_aug, aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  xlab("Fitted values") +
+  ylab("Residuals")
+```
+
+We have used the above created model to predict the certain values of pf_score based. For the below context, though the actual value is 8.747, the nearly predicted value was 8.23.
+
+```{r}
+hfi %>% 
+  filter(countries == "United States" & year == 2016) %>% 
+  select(pf_score, pf_expression_influence, pf_expression_control)
+
+hfi %>% 
+  filter(countries == "United States" & year == 2016) %>% 
+  predict(m_pf, .)
+```
+In this way we have applied the appropriate generalized model based on the dataset. Also we have evaluated the model using several statistical methodologies and graphs to detremine if the model is a good fit or not and how the model is doing to predict the depednent variable.
+
+
+#Conduct model selection for a set of candidate models
+
+
+
+#Communicate the results of statistical models to a general audience
+
+
+#Use programming software (i.e., R) to fit and assess statistical models
