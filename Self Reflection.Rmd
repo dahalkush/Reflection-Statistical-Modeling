@@ -1,0 +1,196 @@
+---
+title: "Self Reflection"
+author: "Kushal"
+date: "4/27/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Objective 1-Describe probability as a foundation of statistical modeling, including inference and maximum likelihood estimation
+
+Probability is always considered as a foundation of statistical modeling. When we have a data which is randomly distributed and has uncertainty, we consider probability like happening something if some conditions are met or the chances of it. On most of the statistical scenario, our goal is to understand the probability of something, either it may be the probability of something appearing, error occuring, false interpretation happening and so on. So on every aspect and on most statistical alsgorithms and technique, probability is the foundation. 
+
+In our course, considering the linear regression, I see it as a probability of happening something depending on the other certain variables. For an example, finding out the probability of being broke based on the income and living standards parameters. 
+
+Inference is  to predict something based on the other parameters. For an example, predicting loan amount of a student which is dependent on the rent, car price, distance from university, credits take and so on. We can implement multiple linear regression to predict the loan amount based on those factors. Both estimation and hypothesis comes under the inference. In inference, we may consider the sample data which represents the population data and use statistical techniques to predict and find out the conclusions assuming them as genralized population analysis.
+
+For the maximum likelihood estimation, we focus on the statistical model parameters and try to find them correctly so that it can help to make the correct estimates or prediction. During our class activities, we built linear regression model using lm() to estimate the slope and intercept of the regression line. For and example with a simple regression model of y=mx+c, the parameters of the model intercept(c) and slope (m) makes the estimation of the variable y on a particular value of x. glance() function in r was used to find out the standard errors and confidence interval while estimating intercept and slope of the model.
+
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+hfi <- read.csv("https://www.openintro.org/data/csv/hfi.csv")
+hfi_2016<- filter(hfi, year == 2016)
+simple_model <- lm(pf_score ~ pf_expression_control, data = hfi_2016)
+par(mfrow = c(2, 2))
+plot(simple_model)
+```
+```{r}
+glance(simple_model)
+tidy(simple_model)
+```
+
+During the activity 2 in the class, we worked on the simple linear regression model on the hfi dataset. In the above model, our objective was to predict the pf_score depending on pf_expression_control variable. We built a simple linear regression model using lm(). For the inference, we tried to predict the pf_score. Regarding the maximum likelihood estimation, we were able to get slope and the intercept for the above model. The slope value(m)- pf_expression_control is 0.541 and intercept c is 4.283. For the model accuracy and error calculation, tidy function was used to give the standard error whereas glance is used to calcuate the r- square and p value. 
+
+
+# Objective 2-Determine and apply the appropriate generalized linear model for a specific data context
+Based on specific data context, it is always important to determine which is the generalized linear model and what combination of independent attributes can play an important role to predict the dependent one with highe accuracy and low error. For these kind of evaluation, we have several statistical metrics and methodologies to evaluate the accuracy of the models.  Fitting the linear regression model with correct attributes so the model can be accurately used to predict the dependent variable is important.
+
+Below we have evaluated our model to predict the pf_score based on pf_expression_influence  and pf_expression_control. The p-values for the slopes and intercept are below 0.05 and the standard error is also within the 0.05. 
+
+```{r}
+
+library(GGally)
+hfi %>% 
+  select(pf_score, pf_expression_influence, pf_expression_control) %>% 
+  ggpairs()
+
+#fit the mlr model
+m_pf <- lm(pf_score ~ pf_expression_influence + pf_expression_control, data = hfi)
+tidy(m_pf)
+glance(m_pf)
+```
+From the summary below, we can see that the F-statistic is 1308 and the p-value <0.00001 which is less than the 0.05(significance level). This means that the model has good accuracy as there is statistically significant relationship between the predictor variable and the response variable.
+```{r}
+summary(m_pf)
+```
+Also the plot between residuals vs. fitted (predicted) values are created which seems like randomly distributed that has the significance notifying no significant predictors are missing and there is not any systematic errors present on the model. Also from the graph below it looks like they have the predictors and response variable have linear relationship.
+
+```{r}
+# obtain fitted values and residuals
+m_pf_aug <- augment(m_pf)
+
+# plot fitted values and residuals
+ggplot(data = m_pf_aug, aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  xlab("Fitted values") +
+  ylab("Residuals")
+```
+
+We have used the above created model to predict the certain values of pf_score based. For the below context, though the actual value is 8.747, the nearly predicted value was 8.23.
+
+```{r}
+hfi %>% 
+  filter(countries == "United States" & year == 2016) %>% 
+  select(pf_score, pf_expression_influence, pf_expression_control)
+
+hfi %>% 
+  filter(countries == "United States" & year == 2016) %>% 
+  predict(m_pf, .)
+```
+In this way we have applied the appropriate generalized model based on the dataset. Also we have evaluated the model using several statistical methodologies and graphs to detremine if the model is a good fit or not and how the model is doing to predict the depednent variable.
+
+
+#Objective 3: Conduct model selection for a set of candidate models
+
+Each model can have their own significance and own way of working on the dataset. In my project, to predict the stock closing price based on the date, I have implemented linear regression, random forest and polynomial regression. For the three models, I have calculated MSE and RMSE to analyse how each model is doing. for my project, model based on random forest has the lowest RMSE of 15.92 which is significantly lower than the linear and polynomial regression. It looks like for this dataset, with two variables, closing price depending only on the date, random forest is doing good compared to linear regression and polynomial regression.
+
+But when we consider only linear and polynomial, we can see that polynomial regression has lower rmse. Also comapring AIC and BIC between the polynomial and linear regression models, polynomial has lower AIC and BIC values indicating it as a best model.
+
+If we had more predictors, the model performance based on other attributes can be different. These evaluation metrics can play a significant role. below are some of the r programming implemented for my project.  
+
+```{r}
+library(tidyverse)
+library(quantmod)
+
+begining <- as.Date("2015-01-01")
+last_date <- as.Date("2023-04-05")
+raw <- getSymbols("^GSPC", src = "yahoo", from = begining, to = last_date, auto.assign = FALSE)
+stock_date = index(raw)
+closingprice = as.numeric(raw[, "GSPC.Close"])
+df <- data.frame(stock_date, closingprice)
+```
+
+#Using Linear Regression Model
+```{r}
+linear_model <- lm(closingprice ~ stock_date, data = df)
+predict_stock <- predict(linear_model, newdata = df)
+mse <- mean((predict_stock - df$closingprice)^2)
+cat("MSE: ",mse,"\n")
+rmse <- sqrt(mse)
+cat("RMSE: ",rmse)
+summary(linear_model)
+```
+
+#Using Random Forest Regression
+```{r}
+library(randomForest)
+rand_model <- randomForest(closingprice ~ stock_date, data = df, ntree = 200, mtry = 1)
+predict_stock <- predict(rand_model, newdata = df)
+mse <- mean((predict_stock - df$closingprice)^2)
+cat("MSE: ",mse,"\n")
+rmse <- sqrt(mse)
+cat("RMSE: ",rmse)
+summary(rand_model)
+```
+
+
+#Using polynomial regression
+```{r}
+date_num <- as.numeric(df$stock_date)
+poly_model <- lm(closingprice ~ poly(date_num, 2, raw = TRUE), data = df)
+predict_stock <- predict(poly_model, newdata = df)
+mse <- mean((predict_stock - df$closingprice)^2)
+cat("MSE: ",mse, "\n")
+rmse <- sqrt(mse)
+cat("RMSE: ",rmse)
+summary(poly_model)
+```
+
+```{r}
+AIC(linear_model,  poly_model)
+BIC(linear_model,  poly_model)
+```
+
+Also there are several validation techniques used to increase the performance of the model. One of them is k fold cross validation where we splitted the datasets into k equal folds and used k-1 folds as the training dataset for the model whereas the other one fold as a testing dataset. There will be k iterations where each fold get the chance to be in the testing dataset. It helps to evaluate the model correctly and efficiently. Below is the eample where we used 10 fold cross validation.
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(caret)
+set.seed(105)
+hfi <- read.csv("https://www.openintro.org/data/csv/hfi.csv")
+hfi_2016<- filter(hfi, year == 2016)
+trains <- trainControl(method = "cv",number = 10)
+model <- train(pf_score ~ pf_expression_control, data = hfi_2016,
+               trControl = trains,
+               method = "lm")
+print(model)
+
+```
+
+
+
+#Objective 4: Communicate the results of statistical models to a general audience
+
+Creating the statistical models, optimizing them and increasing the accuracy has one kind of importance. But the major another important is how you present the model story to the audience. Making the general audience understand the significance of the statistical findings and trends is challenging. Conducting exploratory analysis and presenting the data story to the audience initially and then presenting the model working, prediction accuracy and evaluation can be the other story. I conducted several exploratory analysis of the data in the begining and then build the charts between original and predicted flow. Below is the example of my project where we can see the graph representing how close my model was to predict the values compared to the original one.
+```{r}
+predict_stock <- predict(linear_model, newdata = df)
+ggplot() +
+  geom_line(data = df, aes(x = stock_date, y = closingprice), color = "yellow") +
+  geom_line(data = df, aes(x = stock_date, y = predict_stock), color = "red") +
+  labs(title = "Prediction with Simple Linear Regression", x = "Stock Date", y = "Closing Price") 
+
+```
+That was an example of the charts and graphs we can build. Also the evaluations such as RMSE, Root squared and so on can be showed and presented and informed that how the models is good based on those metrics. Also we can add p - values of the modle if it is less than 0.05 or not and the model is wignificant or not, presenting the residual plot if there is absent of patterns or not, looking at the histograms if it is normally distributed. These kind of graphs that I have explained on my first and second objective are the one that can be used to communicate with the general audience. 
+
+It's always important to present your results and findings in the simple way and inform how they can be important in the day to day cycle. Using visuals, graphs, text and blogs can be also useful for the communication. It's important to explain about the future plan of what more can be done on that models and talk about the model limitations and challenges. This can help more for the general audience to understand the story.
+
+#Objective 5: Use programming software (i.e., R) to fit and assess statistical models
+
+In the explanation of my first, second and third objective, I have provided the examples of several statistical models which i accomplished on the projects, class activities and brainstorming which represents the fitting and assessing the statistical models. 
+
+I have used function like lm(), glm() andso on to fit the model. Once the models is fitted, I assesed it using residual plots and model evaluation metrics like RMSE, R Square and so on and explained how well it fits the data. Several R functions are used to evaluate them. Functions like glance(), summary() etc were used. Diagnosing the model in graphical way is another important way.
+
+#General difficulties, Challenges faced and the path followed in this course to learn.
+
+The path to learn more about regression algorithms and implementation in this course was interesting and productive. There were a lot of new things I learnt regarding the regression. Though I have studied regression algorithms on another classes, understanding it in depth was the first time for me in this class.
+
+The few difficulties for me was I was unknown about the assumptions of linear regression which was linearity and normality. I knew that these assumptions can affect the model performance highly. Another challenge was to how to deal with the multicollinearity problem exist between the predictors themselves. Learning the text book helped me a lot how we can avoid and handle them. 
+
+One of the major challenge that i still see is how we are gonna chose the best and efficient predictors that are good fit for the models and have higher accuracy. Exploratory analysis helped me a lot when chosing the best predictors among many of them. 
+Building a model can be easier but evaluating the model if it is doing good as expected or not is important. Interpreting and evaluating the model with the p-value, rmse, r square, evaluating residual plots, checking linearity and normality were very important. These are some important learnings for me to conduct. The path was interesting and having findings and trends using the models were efficient. These all factors motivated me to analyse.
